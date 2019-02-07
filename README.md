@@ -4,6 +4,7 @@
 
 This packages uses the saferpay json api and the saferpay payment page interface.
 See the official [saferpay json api](http://saferpay.github.io/jsonapi/#ChapterPaymentPage) for more information.
+Take also a look at [test.saferpay.com](https://test.saferpay.com/).
 
 ## django
 
