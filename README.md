@@ -10,8 +10,10 @@ Take also a look at [test.saferpay.com](https://test.saferpay.com/).
 
 ## django setup
 
-I use this django package in cunjunction with django-oscar. It can work with other django shop systems,
+This django package in used in cunjunction with django-oscar. It can work with other django shop systems,
 nothing is tied to django-oscar.
+
+It's used with dango 1.11 but should/could work with django 2.0, 2.1.
 
 first update `settings.py`:
 
