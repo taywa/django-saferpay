@@ -2,7 +2,7 @@
 
 *Saferpay integration for django*
 
-This packages uses the saferpay json api and the saferpay payment page interface.
+This package uses the saferpay json api and the saferpay payment page interface.
 This is NOT an offical package from SIX Payment Services.
 
 See the official [saferpay json api](http://saferpay.github.io/jsonapi/#ChapterPaymentPage) for more information.
@@ -14,6 +14,8 @@ This django package in used in cunjunction with django-oscar. It can work with o
 nothing is tied to django-oscar.
 
 It's used with dango 1.11 but should/could work with django 2.0, 2.1.
+
+Install with `pip install django-saferpay`.
 
 first update `settings.py`:
 
