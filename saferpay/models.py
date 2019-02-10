@@ -37,4 +37,7 @@ class SaferpayResponse(models.Model):
     def action(self):
         from saferpay.gateway import API_PATHS_LOOKUP
         lookup = self.url.replace(settings.SAFERPAY_APIURL, '')
-        return API_PATHS_LOOKUP[lookup]
+        try:
+            return API_PATHS_LOOKUP[lookup]
+        except KeyError:
+            return self.url
