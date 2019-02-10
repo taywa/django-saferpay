@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 
 from saferpay import VERSION
-
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from distutils.core import setup, find_packages
+from setuptools import setup, find_packages
 
 with open("README.md", "r") as f:
     long_description = f.read()
