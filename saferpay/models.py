@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class SaferpayTransaction(models.Model):
@@ -31,3 +32,9 @@ class SaferpayResponse(models.Model):
     response_time = models.FloatField(help_text='Response time in milliseconds')
     payload = models.TextField()
     response = models.TextField()
+
+    @property
+    def action(self):
+        from saferpay.gateway import API_PATHS_LOOKUP
+        lookup = self.url.replace(settings.SAFERPAY_APIURL, '')
+        return API_PATHS_LOOKUP[lookup]

@@ -18,7 +18,7 @@ API_PATHS = dict(
     TRANSACTION_CAPTURE='/Payment/v1/Transaction/Capture',
     TRANSACTION_CANCEL='/Payment/v1/Transaction/Cancel'
 )
-
+API_PATHS_LOOKUP = {v: k for k, v in API_PATHS.items()}
 SPECVERSION = 1.9
 
 
