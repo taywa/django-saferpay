@@ -3,16 +3,21 @@
 from saferpay import VERSION
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, find_packages
+
+with open("README.md", "r") as f:
+    long_description = f.read()
 
 setup(
-    name='saferpay',
-    packages=['saferpay'],
+    name='django-saferpay',
+    packages=find_packages(),
     version=VERSION,
     license='MIT',
     description='Saferpay payment integration for django.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Yves Serrano',
     author_email='ys@taywa.ch',
     url='https://github.com/taywa/django-saferpay',
@@ -20,6 +25,7 @@ setup(
     install_requires=[
         'Django>=1.11,<2.2',
     ],
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
