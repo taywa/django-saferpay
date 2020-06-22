@@ -101,6 +101,7 @@ class SaferpayService:
                     'CurrencyCode': self.currency
                 },
                 'OrderId': self.order_id,
+                'PayerNote': "Ref: {}".format(self.order_id),
                 'BillingAddress': billing_address,
                 'Description': self.ORDER_TEXT_NR % self.order_id,
             },
