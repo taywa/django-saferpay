@@ -23,16 +23,16 @@ SPECVERSION = 1.9
 
 
 class SaferpayService:
-    def __init__(self, order_id=None, notify_token='', amount=None, currency=None,
+    def __init__(self, order_id=None, notify_token='', amount=None, currency=None, payment_methods=None,
                  language_code='en', token=None, sp_trans=None):
-        self.order_id, self.amount, self.currency = (
-            order_id, amount, currency
+        self.order_id, self.amount, self.currency, self.payment_methods = (
+            order_id, amount, currency, payment_methods
         )
         self.language_code = language_code
         self.FORCE_LIABILITY_SHIFT_ACTIVE = getattr(
             settings, 'SAFERPAY_FORCE_LIABILITYSHIFT_ACTIVE', False
         )
-        self.DO_NOTIFY = getattr(
+        self.DO_NOTIFY = getattr(  # according to the docs, this is only relevant to Paydirekt transactions
             settings, 'SAFERPAY_DO_NOTIFY', False
         )
         self.ORDER_TEXT_NR = getattr(settings, 'SAFERPAY_ORDER_TEXT_NR', 'Order nr. %s')
@@ -112,7 +112,9 @@ class SaferpayService:
                 'Fail': self.FAIL_URL
             }
         }
-
+        # PaymentMethods according to http://saferpay.github.io/jsonapi/#Payment_v1_Transaction_Initialize
+        if self.payment_methods:
+            payload['PaymentMethods'] = self.payment_methods
         return payload
 
     def add_do_notify(self, payload, notify_token):
