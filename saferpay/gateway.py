@@ -55,6 +55,7 @@ class SaferpayService:
         self._next_url, self.sp_trans, self.token, self.notify_token = (
             None, sp_trans, token, notify_token
         )
+        self.capture_response_payload, self.assert_response_payload, init_response_payload = (None, None, None)
 
     @classmethod
     def init_from_transaction(cls, token=None):
@@ -108,6 +109,10 @@ class SaferpayService:
             "Payer": {
                 'LanguageCode': self.language_code
             },
+            'RegisterAlias': {  # this alias can later be used to execute operations in SaferPay with the payment info
+                'IdGenerator': 'RANDOM_UNIQUE',
+                'Lifetime': getattr(settings, "SAFERPAY_ALIAS_LIFETIME", 1600)
+            },
             'ReturnUrls': {
                 'Success': self.SUCCESS_CAPTURE_URL,
                 'Fail': self.FAIL_URL
@@ -137,13 +142,16 @@ class SaferpayService:
                 amount=self.amount, currency=self.currency, language_code=self.language_code
             )
             sp_trans.save()
+
             self._new_saferpay_response(
                 'PAYMENTPAGE_INIT', payload, res, res_time, sp_trans, status_code=res.status_code
             )
+            self.init_response_payload = res.json()  # somebody might need the result synchronously in the instanc
             self._next_url = data['RedirectUrl']
             self.token = data['Token']
             return data['Token']
         elif res:
+            self.init_response_payload = res.json()
             raise GatewayError('PAYMENTPAGE_INIT failed')
         else:
             print(res.status_code, res.text)
@@ -172,6 +180,7 @@ class SaferpayService:
             self.sp_trans.transaction_id = res_data['Transaction']['Id']
             self.sp_trans.status = res_data['Transaction']['Status']
             self.sp_trans.save()
+            self.assert_response_payload = res.json()  # somebody might need the result synchronously in the instance
             self._new_saferpay_response(
                 'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
@@ -188,6 +197,7 @@ class SaferpayService:
                 'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
             )
+            self.assert_response_payload = res.json()
             raise GatewayError('PAYMENTPAGE_ASSERT failed')
         else:
             raise PaymentError('PAYMENTPAGE_ASSERT')
@@ -213,6 +223,7 @@ class SaferpayService:
            and res.json()['Status'] == 'CAPTURED':
             self.sp_trans.status = 'CAPTURED'
             self.sp_trans.save()
+            self.capture_response_payload = res.json()  # someone might need the response synchronously in the instance
             self._new_saferpay_response(
                 'TRANSACTION_CAPTURE', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
@@ -224,6 +235,7 @@ class SaferpayService:
                 status_code=res.status_code
             )
             self.transaction_cancel()
+            self.capture_response_payload = res.json()
             raise UnableToTakePayment('TRANSACTION_CAPTURE failed')
         else:
             raise PaymentError('TRANSACTION_CAPTURE')

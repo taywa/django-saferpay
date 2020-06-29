@@ -10,7 +10,7 @@ class SaferpayTransaction(models.Model):
         ('CANCELD', 'CANCELD'),
     )
     token = models.CharField(max_length=32, primary_key=True)
-    order_id = models.IntegerField()
+    order_id = models.CharField(max_length=64)
     date_created = models.DateTimeField(auto_now_add=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=8, null=True, blank=True)
