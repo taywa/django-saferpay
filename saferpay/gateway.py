@@ -87,7 +87,7 @@ class SaferpayService:
         )
         sp_res.save()
 
-    def payload_init(self, billing_address):
+    def payload_init(self, billing_address, register_alias=False):
         payload = {
             'RequestHeader': {
                 'SpecVersion': SPECVERSION,
@@ -109,15 +109,20 @@ class SaferpayService:
             "Payer": {
                 'LanguageCode': self.language_code
             },
-            'RegisterAlias': {  # this alias can later be used to execute operations in SaferPay with the payment info
-                'IdGenerator': 'RANDOM_UNIQUE',
-                'Lifetime': getattr(settings, "SAFERPAY_ALIAS_LIFETIME", 1600)
-            },
             'ReturnUrls': {
                 'Success': self.SUCCESS_CAPTURE_URL,
                 'Fail': self.FAIL_URL
             }
         }
+
+        if register_alias:
+            # this alias can later be used to execute operations in SaferPay with the payment info
+            # only works with credit cards
+            payload['RegisterAlias'] = {
+                'IdGenerator': 'RANDOM_UNIQUE',
+                'Lifetime': getattr(settings, "SAFERPAY_ALIAS_LIFETIME", 1600)
+            }
+
         # PaymentMethods according to http://saferpay.github.io/jsonapi/#Payment_v1_Transaction_Initialize
         if self.payment_methods:
             payload['PaymentMethods'] = self.payment_methods
