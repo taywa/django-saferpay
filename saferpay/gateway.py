@@ -188,10 +188,7 @@ class SaferpayService:
             if self.FORCE_LIABILITY_SHIFT_ACTIVE and 'Liability' in res_data \
                and res_data['Liability']['LiabilityShift'] is False:
                 return self.transaction_cancel()
-            if res_data['Transaction']['Status'] == 'AUTHORIZED':
-                return self.transaction_capture()
-            elif res_data['Transaction']['Status'] == 'CAPTURED':
-                return 'CAPTURED'
+            return res_data['Transaction']['Status']
         elif res:
             self._new_saferpay_response(
                 'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
