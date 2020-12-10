@@ -19,7 +19,7 @@ setup(
     url='https://github.com/taywa/django-saferpay',
     keywords=['saferpay', 'payment'],
     install_requires=[
-        'Django>=1.11,<2.2',
+        'Django>=1.11',
     ],
     include_package_data=True,
     classifiers=[
@@ -32,9 +32,11 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Framework :: Django',
         'Framework :: Django :: 1.11',
         'Framework :: Django :: 2.0',
         'Framework :: Django :: 2.1',
+        'Framework :: Django :: 3.0',
     ],
 )
