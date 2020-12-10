@@ -86,7 +86,7 @@ class SaferpayService:
         )
         sp_res.save()
 
-    def payload_init(self, billing_address):
+    def payload_init(self, billing_address, payment_methods):
         payload = {
             'RequestHeader': {
                 'SpecVersion': SPECVERSION,
@@ -104,6 +104,7 @@ class SaferpayService:
                 'BillingAddress': billing_address,
                 'Description': self.ORDER_TEXT_NR % self.order_id,
             },
+            'PaymentMethods': payment_methods,
             "Payer": {
                 'LanguageCode': self.language_code
             },
