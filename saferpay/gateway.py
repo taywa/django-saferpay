@@ -233,7 +233,7 @@ class SaferpayService:
             return 'CAPTURED'
         elif res:
             self._new_saferpay_response(
-                'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
+                'TRANSACTION_CAPTURE', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
             )
             self.transaction_cancel()
@@ -270,6 +270,6 @@ class SaferpayService:
                 'TRANSACTION_CANCEL', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
             )
-            raise UnableToTakePayment('TRANSACTION_CAPTURE failed')
+            raise UnableToTakePayment('TRANSACTION_CANCEL failed')
         else:
-            raise PaymentError('TRANSACTION_CAPTURE')
+            raise PaymentError('TRANSACTION_CANCEL')
