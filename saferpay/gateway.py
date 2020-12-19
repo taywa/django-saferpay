@@ -19,20 +19,20 @@ API_PATHS = dict(
     TRANSACTION_CANCEL='/Payment/v1/Transaction/Cancel'
 )
 API_PATHS_LOOKUP = {v: k for k, v in API_PATHS.items()}
-SPECVERSION = 1.9
+SPECVERSION = "1.20"
 
 
 class SaferpayService:
-    def __init__(self, order_id=None, notify_token='', amount=None, currency=None,
+    def __init__(self, order_id=None, notify_token='', amount=None, currency=None, payment_methods=None,
                  language_code='en', token=None, sp_trans=None):
-        self.order_id, self.amount, self.currency = (
-            order_id, amount, currency
+        self.order_id, self.amount, self.currency, self.payment_methods = (
+            order_id, amount, currency, payment_methods
         )
         self.language_code = language_code
         self.FORCE_LIABILITY_SHIFT_ACTIVE = getattr(
             settings, 'SAFERPAY_FORCE_LIABILITYSHIFT_ACTIVE', False
         )
-        self.DO_NOTIFY = getattr(
+        self.DO_NOTIFY = getattr(  # according to the docs, this is only relevant to Paydirekt transactions
             settings, 'SAFERPAY_DO_NOTIFY', False
         )
         self.ORDER_TEXT_NR = getattr(settings, 'SAFERPAY_ORDER_TEXT_NR', 'Order nr. %s')
@@ -55,6 +55,7 @@ class SaferpayService:
         self._next_url, self.sp_trans, self.token, self.notify_token = (
             None, sp_trans, token, notify_token
         )
+        self.capture_response_payload, self.assert_response_payload, init_response_payload = (None, None, None)
 
     @classmethod
     def init_from_transaction(cls, token=None):
@@ -86,7 +87,7 @@ class SaferpayService:
         )
         sp_res.save()
 
-    def payload_init(self, billing_address):
+    def payload_init(self, billing_address, register_alias=False):
         payload = {
             'RequestHeader': {
                 'SpecVersion': SPECVERSION,
@@ -101,6 +102,7 @@ class SaferpayService:
                     'CurrencyCode': self.currency
                 },
                 'OrderId': self.order_id,
+                'PayerNote': "Ref: {}".format(self.order_id),
                 'BillingAddress': billing_address,
                 'Description': self.ORDER_TEXT_NR % self.order_id,
             },
@@ -113,6 +115,17 @@ class SaferpayService:
             }
         }
 
+        if register_alias:
+            # this alias can later be used to execute operations in SaferPay with the payment info
+            # only works with credit cards
+            payload['RegisterAlias'] = {
+                'IdGenerator': 'RANDOM_UNIQUE',
+                'Lifetime': getattr(settings, "SAFERPAY_ALIAS_LIFETIME", 1600)
+            }
+
+        # PaymentMethods according to http://saferpay.github.io/jsonapi/#Payment_v1_Transaction_Initialize
+        if self.payment_methods:
+            payload['PaymentMethods'] = self.payment_methods
         return payload
 
     def add_do_notify(self, payload, notify_token):
@@ -134,13 +147,16 @@ class SaferpayService:
                 amount=self.amount, currency=self.currency, language_code=self.language_code
             )
             sp_trans.save()
+
             self._new_saferpay_response(
                 'PAYMENTPAGE_INIT', payload, res, res_time, sp_trans, status_code=res.status_code
             )
+            self.init_response_payload = res.json()  # somebody might need the result synchronously in the instanc
             self._next_url = data['RedirectUrl']
             self.token = data['Token']
             return data['Token']
         elif res:
+            self.init_response_payload = res.json()
             raise GatewayError('PAYMENTPAGE_INIT failed')
         else:
             print(res.status_code, res.text)
@@ -169,6 +185,7 @@ class SaferpayService:
             self.sp_trans.transaction_id = res_data['Transaction']['Id']
             self.sp_trans.status = res_data['Transaction']['Status']
             self.sp_trans.save()
+            self.assert_response_payload = res.json()  # somebody might need the result synchronously in the instance
             self._new_saferpay_response(
                 'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
@@ -176,15 +193,13 @@ class SaferpayService:
             if self.FORCE_LIABILITY_SHIFT_ACTIVE and 'Liability' in res_data \
                and res_data['Liability']['LiabilityShift'] is False:
                 return self.transaction_cancel()
-            if res_data['Transaction']['Status'] == 'AUTHORIZED':
-                return self.transaction_capture()
-            elif res_data['Transaction']['Status'] == 'CAPTURED':
-                return 'CAPTURED'
+            return res_data['Transaction']['Status']
         elif res:
             self._new_saferpay_response(
                 'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
             )
+            self.assert_response_payload = res.json()
             raise GatewayError('PAYMENTPAGE_ASSERT failed')
         else:
             raise PaymentError('PAYMENTPAGE_ASSERT')
@@ -210,6 +225,7 @@ class SaferpayService:
            and res.json()['Status'] == 'CAPTURED':
             self.sp_trans.status = 'CAPTURED'
             self.sp_trans.save()
+            self.capture_response_payload = res.json()  # someone might need the response synchronously in the instance
             self._new_saferpay_response(
                 'TRANSACTION_CAPTURE', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
@@ -217,10 +233,11 @@ class SaferpayService:
             return 'CAPTURED'
         elif res:
             self._new_saferpay_response(
-                'PAYMENTPAGE_ASSERT', payload, res, res_time, self.sp_trans,
+                'TRANSACTION_CAPTURE', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
             )
             self.transaction_cancel()
+            self.capture_response_payload = res.json()
             raise UnableToTakePayment('TRANSACTION_CAPTURE failed')
         else:
             raise PaymentError('TRANSACTION_CAPTURE')
@@ -253,6 +270,6 @@ class SaferpayService:
                 'TRANSACTION_CANCEL', payload, res, res_time, self.sp_trans,
                 status_code=res.status_code
             )
-            raise UnableToTakePayment('TRANSACTION_CAPTURE failed')
+            raise UnableToTakePayment('TRANSACTION_CANCEL failed')
         else:
-            raise PaymentError('TRANSACTION_CAPTURE')
+            raise PaymentError('TRANSACTION_CANCEL')
