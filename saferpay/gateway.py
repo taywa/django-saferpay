@@ -23,8 +23,11 @@ SPECVERSION = 1.9
 
 
 class SaferpayService:
-    def __init__(self, order_id=None, notify_token='', amount=None, currency=None,
-                 language_code='en', token=None, sp_trans=None):
+    def __init__(self, customer_id=None, terminal_id=None, order_id=None,
+                 notify_token='', amount=None, currency=None, language_code='en',
+                 token=None, sp_trans=None, auth=None):
+        self.CUSTOMERID = customer_id or settings.SAFERPAY_CUSTOMERID
+        self.TERMINALID = terminal_id or settings.SAFERPAY_TERMINALID
         self.order_id, self.amount, self.currency = (
             order_id, amount, currency
         )
@@ -36,12 +39,9 @@ class SaferpayService:
             settings, 'SAFERPAY_DO_NOTIFY', False
         )
         self.ORDER_TEXT_NR = getattr(settings, 'SAFERPAY_ORDER_TEXT_NR', 'Order nr. %s')
-        self.APIURL, self.CUSTOMERID, self.TERMINALID = (
-            settings.SAFERPAY_APIURL, settings.SAFERPAY_CUSTOMERID,
-            settings.SAFERPAY_TERMINALID
-        )
+        self.APIURL = settings.SAFERPAY_APIURL
         s = requests.Session()
-        s.auth = (settings.SAFERPAY_USERNAME, settings.SAFERPAY_PASSWORD)
+        s.auth = auth or (settings.SAFERPAY_USERNAME, settings.SAFERPAY_PASSWORD)
         self.SITE_BASE_URL = '{}://{}'.format(
             'https' if settings.USE_HTTPS else 'http',
             Site.objects.get_current().domain
