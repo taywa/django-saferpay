@@ -57,12 +57,12 @@ class SaferpayService:
         )
 
     @classmethod
-    def init_from_transaction(cls, token=None):
+    def init_from_transaction(cls, token=None, **kwargs):
         sp_trans = SaferpayTransaction.objects.get(token=token)
         return cls(
             order_id=sp_trans.order_id, notify_token=sp_trans.notify_token, amount=sp_trans.amount,
             currency=sp_trans.currency, language_code=sp_trans.language_code,
-            token=token, sp_trans=sp_trans
+            token=token, sp_trans=sp_trans, **kwargs
         )
 
     def _url(self, key):
